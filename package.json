@@ -1,0 +1,29 @@
+{
+  "name": "nodejs-course",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node .",
+    "start:dev": "nodemon --watch src"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eAlekshub/nodejs-course.git"
+  },
+  "author": "Oleksandr Iefymchuk",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/eAlekshub/nodejs-course/issues"
+  },
+  "homepage": "https://github.com/eAlekshub/nodejs-course#readme",
+  "dependencies": {
+    "express": "^4.18.2",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
