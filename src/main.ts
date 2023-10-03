@@ -2,13 +2,14 @@ import swaggerDoc from './swagger.json';
 import swaggerUi from 'swagger-ui-express';
 import express, { Request, Response } from 'express';
 
-const app = express();
+const app: express.Application = express();
 const PORT: number = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDoc));
 
 app.get('/health-check', (req: Request, res: Response): void => {
-  res.json({ status: 'Server is up and running' });
+  const response: { status: string } = { status: 'Server is up and running' };
+  res.json(response);
 });
 
 app.get('/user/:id', (req: Request, res: Response): void => {
@@ -20,17 +21,21 @@ app.get('/user/:id', (req: Request, res: Response): void => {
     }
 
     if (userId !== '1') {
-      res.status(404).json({ error: 'User not found' });
+      const errorResponse: { error: string } = { error: 'Not Found' };
+      res.status(404).json(errorResponse);
     } else {
-      res.json({ user: { id: userId, name: 'User name' } });
+      const user: { id: string; name: string } = { id: userId, name: 'User name' };
+      res.json(user);
     }
   } catch (error) {
-    res.status(500).json({ error: 'Internal Server Error' });
+    const errorResponse: { error: string } = { error: 'Internal Server Error' };
+    res.status(500).json(errorResponse);
   }
 });
 
 app.use((req: Request, res: Response): void => {
-  res.status(404).json({ error: 'Not Found' });
+  const errorResponse: { error: string } = { error: 'Not Found' };
+  res.status(404).json(errorResponse);
 });
 
 app.listen(PORT, (): void => {
