@@ -59,10 +59,6 @@ router.get('/:id', (req: Request, res: Response): void => {
   try {
     const userId: string = req.params.id;
 
-    if (userId === 'error') {
-      throw new Error('Something went wrong');
-    }
-
     if (userId !== '1') {
       const errorResponse: { error: string } = { error: apiErrors.NOT_FOUND };
       res.status(404).json(errorResponse);
