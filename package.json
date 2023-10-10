@@ -2,28 +2,42 @@
   "name": "nodejs-course",
   "version": "1.0.0",
   "description": "",
-  "main": "./src/index.js",
+  "main": "./dist/main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node .",
-    "start:dev": "nodemon --watch src"
+    "build": "rimraf ./dist && npx tsc",
+    "start": "npm run build && node dist/main.js",
+    "start:dev": "npx nodemon",
+    "lint": "npx eslint ./src",
+    "format": "npx eslint ./src --fix"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/eAlekshub/nodejs-course.git"
+    "url": "git+https://github.com/oleksandr-iefymchuk/nodejs-course.git"
   },
   "author": "Oleksandr Iefymchuk",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/eAlekshub/nodejs-course/issues"
+    "url": "https://github.com/oleksandr-iefymchuk/nodejs-course/issues"
   },
-  "homepage": "https://github.com/eAlekshub/nodejs-course#readme",
+  "homepage": "https://github.com/oleksandr-iefymchuk/nodejs-course#readme",
   "dependencies": {
     "express": "^4.18.2",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "@types/express": "^4.17.18",
+    "@types/swagger-ui-express": "^4.1.4",
+    "@types/node": "^20.8.2",
+    "@types/swagger-jsdoc": "^6.0.1",
+    "@typescript-eslint/eslint-plugin": "^6.7.4",
+    "@typescript-eslint/parser": "^6.7.4",
+    "eslint": "^8.50.0",
+    "nodemon": "^3.0.1",
+    "prettier": "^3.0.3",
+    "rimraf": "^5.0.5",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
   }
 }
