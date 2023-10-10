@@ -6,6 +6,8 @@ type ApiErrors = {
 type ApiEndpoints = {
   HEALTH_CHECK: string;
   USERS: string;
+  MOVIES: string;
+  GENRES: string;
 };
 
 export const apiErrors: ApiErrors = {
@@ -16,4 +18,6 @@ export const apiErrors: ApiErrors = {
 export const apiEndpoints: ApiEndpoints = {
   HEALTH_CHECK: '/health-check',
   USERS: '/users',
+  MOVIES: '/movies',
+  GENRES: '/genres',
 };
