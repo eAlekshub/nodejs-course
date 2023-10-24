@@ -1,6 +1,8 @@
-import express, { Request, Response } from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import { genreModel } from '../models/genres';
 import { Genre } from '../interfaces';
+import { HttpError } from '../errors/httpError';
+import { apiErrors } from '../constants';
 
 const router: express.Router = express.Router();
 
@@ -22,16 +24,6 @@ const router: express.Router = express.Router();
  *             example:
  *               - name: Action
  *               - name: Drama
- *       404:
- *         description: Genres not found
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Genres not found
  *       500:
  *         description: Internal Server Error
  *         content:
@@ -44,20 +36,13 @@ const router: express.Router = express.Router();
  *                   example: Internal Server Error
  */
 
-router.get('/', (req: Request, res: Response): void => {
-  genreModel
-    .find()
-    .then((genres: Genre[]): void => {
-      if (genres.length > 0) {
-        res.json(genres);
-      } else {
-        res.status(404).json({ error: 'Genres not found' });
-      }
-    })
-    .catch((error) => {
-      console.log(error);
-      res.status(500).json({ error: 'Internal Server Error' });
-    });
+router.get('/', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const genres: Genre[] = await genreModel.find({}, { _id: 0, __v: 0 });
+    res.json(genres);
+  } catch (error) {
+    next(error);
+  }
 });
 
 /**
@@ -102,21 +87,21 @@ router.get('/', (req: Request, res: Response): void => {
  *                   example: Internal Server Error
  */
 
-router.post('/', (req: Request, res: Response): Response | undefined => {
-  const { name } = req.body;
-  if (!name) {
-    return res.status(400).json({ error: 'Name field is required' });
+router.post('/', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { name } = req.body;
+    if (!name) {
+      next(new HttpError(apiErrors.REQUIRED_NANE, 400));
+    }
+    const genre = new genreModel({ name });
+    const savedGenre: Genre | null = await genre.save();
+    const cleanedResponse: Genre = {
+      name: savedGenre.name,
+    };
+    res.status(201).json(cleanedResponse);
+  } catch (error) {
+    next(error);
   }
-  const genre = new genreModel({ name });
-  genre
-    .save()
-    .then((genre: Genre | null): void => {
-      res.status(201).json(genre);
-    })
-    .catch((error) => {
-      console.log(error);
-      res.status(500).json({ error: 'Internal Server Error' });
-    });
 });
 
 /**
@@ -157,7 +142,7 @@ router.post('/', (req: Request, res: Response): Response | undefined => {
  *                   type: string
  *                   example: Name field is required
  *       404:
- *         description: Genre not found
+ *         description: Not found
  *         content:
  *           application/json:
  *             schema:
@@ -165,7 +150,7 @@ router.post('/', (req: Request, res: Response): Response | undefined => {
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Genre not found
+ *                   example: Not found
  *       500:
  *         description: Internal Server Error
  *         content:
@@ -178,28 +163,26 @@ router.post('/', (req: Request, res: Response): Response | undefined => {
  *                   example: Internal Server Error
  */
 
-router.put('/:id', (req: Request, res: Response): Response | undefined => {
-  const { name } = req.body;
-  if (!name) {
-    return res.status(400).json({ error: 'Name field is required' });
-  }
+router.put('/:id', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { name } = req.body;
+    if (!name) {
+      next(new HttpError(apiErrors.REQUIRED_NANE, 400));
+    }
+    const updatedGenre: Genre | null = await genreModel.findOneAndUpdate(
+      { _id: req.params.id },
+      { $set: { name } },
+      { new: true, fields: { _id: 0, __v: 0 } },
+    );
 
-  const updatedGenre = {
-    name,
-  };
-  genreModel
-    .findOneAndUpdate({ _id: req.params.id }, { $set: updatedGenre })
-    .then((updatedGenre: Genre | null): void => {
-      if (updatedGenre) {
-        res.json(updatedGenre);
-      } else {
-        res.status(404).json({ error: 'Genre not found' });
-      }
-    })
-    .catch((error) => {
-      console.log(error);
-      res.status(500).json({ error: 'Internal Server Error' });
-    });
+    if (updatedGenre) {
+      res.json(updatedGenre);
+    } else {
+      next(new HttpError(apiErrors.NOT_FOUND, 404));
+    }
+  } catch (error) {
+    next(error);
+  }
 });
 
 /**
@@ -224,7 +207,7 @@ router.put('/:id', (req: Request, res: Response): Response | undefined => {
  *             example:
  *               status: Genre deleted successfully
  *       404:
- *         description: Genre not found
+ *         description: Not found
  *         content:
  *           application/json:
  *             schema:
@@ -232,7 +215,7 @@ router.put('/:id', (req: Request, res: Response): Response | undefined => {
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Genre not found
+ *                   example: Not found
  *       500:
  *         description: Internal Server Error
  *         content:
@@ -245,20 +228,18 @@ router.put('/:id', (req: Request, res: Response): Response | undefined => {
  *                   example: Internal Server Error
  */
 
-router.delete('/:id', (req: Request, res: Response): void => {
-  genreModel
-    .findByIdAndRemove(req.params.id)
-    .then((deletedGenre: Genre | null): void => {
-      if (deletedGenre) {
-        res.status(200).json({ message: 'Genre deleted successfully' });
-      } else {
-        res.status(404).json({ error: 'Genre not found' });
-      }
-    })
-    .catch((error) => {
-      console.log(error);
-      res.status(500).json({ error: 'Internal Server Error' });
-    });
+router.delete('/:id', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const deletedGenre: Genre | null = await genreModel.findByIdAndRemove(req.params.id);
+
+    if (deletedGenre) {
+      res.status(200).json({ message: 'Genre deleted successfully' });
+    } else {
+      next(new HttpError(apiErrors.NOT_FOUND, 404));
+    }
+  } catch (error) {
+    next(error);
+  }
 });
 
 export default router;

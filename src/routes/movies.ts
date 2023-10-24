@@ -1,6 +1,8 @@
-import express, { Request, Response } from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import { movieModel } from '../models/movies';
 import { Movie } from '../interfaces';
+import { HttpError } from '../errors/httpError';
+import { apiErrors } from '../constants';
 
 const router: express.Router = express.Router();
 
@@ -28,16 +30,6 @@ const router: express.Router = express.Router();
  *                 description: Description 2
  *                 releaseDate: 2022-02-01
  *                 genre: Drama
- *       404:
- *         description: Movies not found
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Movies not found
  *       500:
  *         description: Internal Server Error
  *         content:
@@ -50,20 +42,13 @@ const router: express.Router = express.Router();
  *                   example: Internal Server Error
  */
 
-router.get('/', (req: Request, res: Response): void => {
-  movieModel
-    .find()
-    .then((movies: Movie[]): void => {
-      if (movies.length > 0) {
-        res.json(movies);
-      } else {
-        res.status(404).json({ error: 'Movies not found' });
-      }
-    })
-    .catch((error) => {
-      console.log(error);
-      res.status(500).json({ error: 'Internal Server Error' });
-    });
+router.get('/', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const movies: Movie[] = await movieModel.find({}, { _id: 0, __v: 0, updatedAt: 0 });
+    res.json(movies);
+  } catch (error) {
+    next(error);
+  }
 });
 
 /**
@@ -102,6 +87,16 @@ router.get('/', (req: Request, res: Response): void => {
  *                 error:
  *                   type: string
  *                   example: All fields are required
+ *       422:
+ *         description: Unprocessable Entity
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Invalid date format
  *       500:
  *         description: Internal Server Error
  *         content:
@@ -114,21 +109,29 @@ router.get('/', (req: Request, res: Response): void => {
  *                   example: Internal Server Error
  */
 
-router.post('/', (req: Request, res: Response): Response | undefined => {
-  const { title, description, releaseDate, genre } = req.body;
-  if (!title || !description || !releaseDate || !genre) {
-    return res.status(400).json({ error: 'All fields are required' });
+router.post('/', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { title, description, releaseDate, genre } = req.body;
+    if (!title || !description || !releaseDate || !genre) {
+      next(new HttpError(apiErrors.REQUIRED_FIELDS, 400));
+    }
+    const validReleaseDate = new Date(releaseDate);
+    if (isNaN(validReleaseDate.getTime())) {
+      next(new HttpError(apiErrors.INVALID_DATE, 422));
+    }
+    const movie = new movieModel({ title, description, releaseDate, genre });
+    const savedMovie: Movie | null = await movie.save();
+    const cleanedResponse: Movie = {
+      title: savedMovie.title,
+      description: savedMovie.description,
+      releaseDate: savedMovie.releaseDate,
+      genre: savedMovie.genre,
+    };
+
+    res.status(201).json(cleanedResponse);
+  } catch (error) {
+    next(error);
   }
-  const movie = new movieModel({ title, description, releaseDate, genre });
-  movie
-    .save()
-    .then((movie: Movie | null): void => {
-      res.status(201).json(movie);
-    })
-    .catch((error) => {
-      console.log(error);
-      res.status(500).json({ error: 'Internal Server Error' });
-    });
 });
 
 /**
@@ -175,7 +178,7 @@ router.post('/', (req: Request, res: Response): Response | undefined => {
  *                   type: string
  *                   example: All fields are required
  *       404:
- *         description: Movie not found
+ *         description: Not found
  *         content:
  *           application/json:
  *             schema:
@@ -183,7 +186,17 @@ router.post('/', (req: Request, res: Response): Response | undefined => {
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Movie not found
+ *                   example: Not found
+ *       422:
+ *         description: Unprocessable Entity
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Invalid date format
  *       500:
  *         description: Internal Server Error
  *         content:
@@ -196,31 +209,38 @@ router.post('/', (req: Request, res: Response): Response | undefined => {
  *                   example: Internal Server Error
  */
 
-router.put('/:id', (req: Request, res: Response): Response | undefined => {
-  const { title, description, releaseDate, genre } = req.body;
-  if (!title || !description || !releaseDate || !genre) {
-    return res.status(400).json({ error: 'All fields are required' });
-  }
+router.put('/:id', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { title, description, releaseDate, genre } = req.body;
+    if (!title || !description || !releaseDate || !genre) {
+      next(new HttpError(apiErrors.REQUIRED_FIELDS, 400));
+    }
 
-  const updatedMovie = {
-    title,
-    description,
-    releaseDate,
-    genre,
-  };
-  movieModel
-    .findOneAndUpdate({ _id: req.params.id }, { $set: updatedMovie })
-    .then((updatedMovie: Movie | null): void => {
-      if (updatedMovie) {
-        res.json(updatedMovie);
-      } else {
-        res.status(404).json({ error: 'Movie not found' });
-      }
-    })
-    .catch((error) => {
-      console.log(error);
-      res.status(500).json({ error: 'Internal Server Error' });
-    });
+    const validReleaseDate = new Date(releaseDate);
+    if (isNaN(validReleaseDate.getTime())) {
+      next(new HttpError(apiErrors.INVALID_DATE, 422));
+    }
+    const updatedMovie: Movie | null = await movieModel.findOneAndUpdate(
+      { _id: req.params.id },
+      {
+        $set: {
+          title,
+          description,
+          releaseDate,
+          genre,
+        },
+      },
+      { new: true, fields: { _id: 0, __v: 0 } },
+    );
+
+    if (updatedMovie) {
+      res.json(updatedMovie);
+    } else {
+      next(new HttpError(apiErrors.NOT_FOUND, 404));
+    }
+  } catch (error) {
+    next(error);
+  }
 });
 
 /**
@@ -245,7 +265,7 @@ router.put('/:id', (req: Request, res: Response): Response | undefined => {
  *             example:
  *               status: Movie deleted successfully
  *       404:
- *         description: Movie not found
+ *         description: Not found
  *         content:
  *           application/json:
  *             schema:
@@ -253,7 +273,7 @@ router.put('/:id', (req: Request, res: Response): Response | undefined => {
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Movie not found
+ *                   example: Not found
  *       500:
  *         description: Internal Server Error
  *         content:
@@ -266,20 +286,17 @@ router.put('/:id', (req: Request, res: Response): Response | undefined => {
  *                   example: Internal Server Error
  */
 
-router.delete('/:id', (req: Request, res: Response): void => {
-  movieModel
-    .findByIdAndRemove(req.params.id)
-    .then((deletedMovie: Movie | null): void => {
-      if (deletedMovie) {
-        res.status(200).json({ message: 'Movie deleted successfully' });
-      } else {
-        res.status(404).json({ error: 'Movie not found' });
-      }
-    })
-    .catch((error) => {
-      console.log(error);
-      res.status(500).json({ error: 'Internal Server Error' });
-    });
+router.delete('/:id', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const deletedMovie: Movie | null = await movieModel.findByIdAndRemove(req.params.id);
+    if (deletedMovie) {
+      res.status(200).json({ message: 'Movie deleted successfully' });
+    } else {
+      next(new HttpError(apiErrors.NOT_FOUND, 404));
+    }
+  } catch (error) {
+    next(error);
+  }
 });
 
 /**
@@ -311,7 +328,7 @@ router.delete('/:id', (req: Request, res: Response): void => {
  *                 releaseDate: 2022-02-01
  *                 genre: Action
  *       404:
- *         description: Movies not found
+ *         description: Not found
  *         content:
  *           application/json:
  *             schema:
@@ -319,7 +336,7 @@ router.delete('/:id', (req: Request, res: Response): void => {
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Movies not found
+ *                   example: Not found
  *       500:
  *         description: Internal Server Error
  *         content:
@@ -332,21 +349,14 @@ router.delete('/:id', (req: Request, res: Response): void => {
  *                   example: Internal Server Error
  */
 
-router.get('/genre/:genreName', (req: Request, res: Response): void => {
-  const genreName = req.params.genreName;
-  movieModel
-    .find({ genre: genreName })
-    .then((movies: Movie[]): void => {
-      if (movies.length > 0) {
-        res.json(movies);
-      } else {
-        res.status(404).json({ error: 'Movies not found' });
-      }
-    })
-    .catch((error) => {
-      console.log(error);
-      res.status(500).json({ error: 'Internal Server Error' });
-    });
+router.get('/genre/:genreName', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const genreName = req.params.genreName;
+    const movies: Movie[] = await movieModel.find({ genre: genreName });
+    res.json(movies);
+  } catch (error) {
+    next(error);
+  }
 });
 
 export default router;
