@@ -1,8 +1,6 @@
-import express, { NextFunction, Request, Response } from 'express';
-import { genreModel } from '../models/genres';
-import { Genre } from '../interfaces';
-import { HttpError } from '../errors/httpError';
-import { apiErrors } from '../constants';
+import express from 'express';
+import { deleteGenre, getAllGenres, createGenre, updateGenre } from '../controllers/genres.controllers';
+import { genreValidation } from '../middlewares/validator';
 
 const router: express.Router = express.Router();
 
@@ -36,14 +34,7 @@ const router: express.Router = express.Router();
  *                   example: Internal Server Error
  */
 
-router.get('/', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const genres: Genre[] = await genreModel.find({}, { _id: 0, __v: 0 });
-    res.json(genres);
-  } catch (error) {
-    next(error);
-  }
-});
+router.get('/', getAllGenres);
 
 /**
  * @openapi
@@ -87,22 +78,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction): Promise
  *                   example: Internal Server Error
  */
 
-router.post('/', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { name } = req.body;
-    if (!name) {
-      next(new HttpError(apiErrors.REQUIRED_NANE, 400));
-    }
-    const genre = new genreModel({ name });
-    const savedGenre: Genre | null = await genre.save();
-    const cleanedResponse: Genre = {
-      name: savedGenre.name,
-    };
-    res.status(201).json(cleanedResponse);
-  } catch (error) {
-    next(error);
-  }
-});
+router.post('/', genreValidation, createGenre);
 
 /**
  * @openapi
@@ -163,27 +139,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction): Promis
  *                   example: Internal Server Error
  */
 
-router.put('/:id', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { name } = req.body;
-    if (!name) {
-      next(new HttpError(apiErrors.REQUIRED_NANE, 400));
-    }
-    const updatedGenre: Genre | null = await genreModel.findOneAndUpdate(
-      { _id: req.params.id },
-      { $set: { name } },
-      { new: true, fields: { _id: 0, __v: 0 } },
-    );
-
-    if (updatedGenre) {
-      res.json(updatedGenre);
-    } else {
-      next(new HttpError(apiErrors.NOT_FOUND, 404));
-    }
-  } catch (error) {
-    next(error);
-  }
-});
+router.put('/:id', genreValidation, updateGenre);
 
 /**
  * @openapi
@@ -228,18 +184,6 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction): Prom
  *                   example: Internal Server Error
  */
 
-router.delete('/:id', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const deletedGenre: Genre | null = await genreModel.findByIdAndRemove(req.params.id);
-
-    if (deletedGenre) {
-      res.status(200).json({ message: 'Genre deleted successfully' });
-    } else {
-      next(new HttpError(apiErrors.NOT_FOUND, 404));
-    }
-  } catch (error) {
-    next(error);
-  }
-});
+router.delete('/:id', deleteGenre);
 
 export default router;

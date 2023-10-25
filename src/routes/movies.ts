@@ -1,8 +1,12 @@
-import express, { NextFunction, Request, Response } from 'express';
-import { movieModel } from '../models/movies';
-import { Movie } from '../interfaces';
-import { HttpError } from '../errors/httpError';
-import { apiErrors } from '../constants';
+import express from 'express';
+import {
+  createMovie,
+  deleteMovie,
+  getAllMovies,
+  getMovieByGenre,
+  updateMovie,
+} from '../controllers/movies.controllers';
+import { movieValidation } from '../middlewares/validator';
 
 const router: express.Router = express.Router();
 
@@ -42,14 +46,7 @@ const router: express.Router = express.Router();
  *                   example: Internal Server Error
  */
 
-router.get('/', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const movies: Movie[] = await movieModel.find({}, { _id: 0, __v: 0, updatedAt: 0 });
-    res.json(movies);
-  } catch (error) {
-    next(error);
-  }
-});
+router.get('/', getAllMovies);
 
 /**
  * @openapi
@@ -86,7 +83,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction): Promise
  *               properties:
  *                 error:
  *                   type: string
- *                   example: All fields are required
+ *                   example: Title field is required
  *       422:
  *         description: Unprocessable Entity
  *         content:
@@ -109,30 +106,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction): Promise
  *                   example: Internal Server Error
  */
 
-router.post('/', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { title, description, releaseDate, genre } = req.body;
-    if (!title || !description || !releaseDate || !genre) {
-      next(new HttpError(apiErrors.REQUIRED_FIELDS, 400));
-    }
-    const validReleaseDate = new Date(releaseDate);
-    if (isNaN(validReleaseDate.getTime())) {
-      next(new HttpError(apiErrors.INVALID_DATE, 422));
-    }
-    const movie = new movieModel({ title, description, releaseDate, genre });
-    const savedMovie: Movie | null = await movie.save();
-    const cleanedResponse: Movie = {
-      title: savedMovie.title,
-      description: savedMovie.description,
-      releaseDate: savedMovie.releaseDate,
-      genre: savedMovie.genre,
-    };
-
-    res.status(201).json(cleanedResponse);
-  } catch (error) {
-    next(error);
-  }
-});
+router.post('/', movieValidation, createMovie);
 
 /**
  * @openapi
@@ -176,7 +150,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction): Promis
  *               properties:
  *                 error:
  *                   type: string
- *                   example: All fields are required
+ *                   example: Title field is required
  *       404:
  *         description: Not found
  *         content:
@@ -209,39 +183,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction): Promis
  *                   example: Internal Server Error
  */
 
-router.put('/:id', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { title, description, releaseDate, genre } = req.body;
-    if (!title || !description || !releaseDate || !genre) {
-      next(new HttpError(apiErrors.REQUIRED_FIELDS, 400));
-    }
-
-    const validReleaseDate = new Date(releaseDate);
-    if (isNaN(validReleaseDate.getTime())) {
-      next(new HttpError(apiErrors.INVALID_DATE, 422));
-    }
-    const updatedMovie: Movie | null = await movieModel.findOneAndUpdate(
-      { _id: req.params.id },
-      {
-        $set: {
-          title,
-          description,
-          releaseDate,
-          genre,
-        },
-      },
-      { new: true, fields: { _id: 0, __v: 0 } },
-    );
-
-    if (updatedMovie) {
-      res.json(updatedMovie);
-    } else {
-      next(new HttpError(apiErrors.NOT_FOUND, 404));
-    }
-  } catch (error) {
-    next(error);
-  }
-});
+router.put('/:id', movieValidation, updateMovie);
 
 /**
  * @openapi
@@ -286,18 +228,7 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction): Prom
  *                   example: Internal Server Error
  */
 
-router.delete('/:id', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const deletedMovie: Movie | null = await movieModel.findByIdAndRemove(req.params.id);
-    if (deletedMovie) {
-      res.status(200).json({ message: 'Movie deleted successfully' });
-    } else {
-      next(new HttpError(apiErrors.NOT_FOUND, 404));
-    }
-  } catch (error) {
-    next(error);
-  }
-});
+router.delete('/:id', deleteMovie);
 
 /**
  * @swagger
@@ -327,16 +258,6 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction): P
  *                 description: Description 2
  *                 releaseDate: 2022-02-01
  *                 genre: Action
- *       404:
- *         description: Not found
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- *                   example: Not found
  *       500:
  *         description: Internal Server Error
  *         content:
@@ -349,14 +270,6 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction): P
  *                   example: Internal Server Error
  */
 
-router.get('/genre/:genreName', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const genreName = req.params.genreName;
-    const movies: Movie[] = await movieModel.find({ genre: genreName });
-    res.json(movies);
-  } catch (error) {
-    next(error);
-  }
-});
+router.get('/genre/:genreName', getMovieByGenre);
 
 export default router;
