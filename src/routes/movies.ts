@@ -7,6 +7,7 @@ import {
   updateMovie,
 } from '../controllers/movies.controllers';
 import { movieValidation } from '../middlewares/validator';
+import { asyncWrapper } from '../asyncWrapper';
 
 const router: express.Router = express.Router();
 
@@ -29,11 +30,15 @@ const router: express.Router = express.Router();
  *               - title: Movie 1
  *                 description: Description 1
  *                 releaseDate: 2022-01-01
- *                 genre: Action
+ *                 genre:
+ *                   - Action
+ *                   - Comedy
  *               - title: Movie 2
  *                 description: Description 2
  *                 releaseDate: 2022-02-01
- *                 genre: Drama
+ *                 genre:
+ *                   - Drama
+ *                   - Comedy
  *       500:
  *         description: Internal Server Error
  *         content:
@@ -46,7 +51,7 @@ const router: express.Router = express.Router();
  *                   example: Internal Server Error
  */
 
-router.get('/', getAllMovies);
+router.get('/', asyncWrapper(getAllMovies));
 
 /**
  * @openapi
@@ -63,7 +68,9 @@ router.get('/', getAllMovies);
  *             title: New Movie
  *             description: New Movie Description
  *             releaseDate: 2023-01-01
- *             genre: Comedy
+ *             genre:
+ *               - Comedy
+ *               - Fantasy
  *     responses:
  *       201:
  *         description: Movie added successfully
@@ -73,7 +80,9 @@ router.get('/', getAllMovies);
  *               title: New Movie
  *               description: New Movie Description
  *               releaseDate: 2023-01-01
- *               genre: Comedy
+ *               genre:
+ *                 - Comedy
+ *                 - Fantasy
  *       400:
  *         description: Bad Request
  *         content:
@@ -106,7 +115,7 @@ router.get('/', getAllMovies);
  *                   example: Internal Server Error
  */
 
-router.post('/', movieValidation, createMovie);
+router.post('/', movieValidation, asyncWrapper(createMovie));
 
 /**
  * @openapi
@@ -130,7 +139,9 @@ router.post('/', movieValidation, createMovie);
  *             title: Updated Movie
  *             description: Updated Movie Description
  *             releaseDate: 2023-02-01
- *             genre: Action
+ *             genre:
+ *               - Action
+ *               - Fantasy
  *     responses:
  *       200:
  *         description: Movie updated successfully
@@ -140,7 +151,9 @@ router.post('/', movieValidation, createMovie);
  *               title: Updated Movie
  *               description: Updated Movie Description
  *               releaseDate: 2023-02-01
- *               genre: Action
+ *             genre:
+ *               - Action
+ *               - Fantasy
  *       400:
  *         description: Bad Request
  *         content:
@@ -183,7 +196,7 @@ router.post('/', movieValidation, createMovie);
  *                   example: Internal Server Error
  */
 
-router.put('/:id', movieValidation, updateMovie);
+router.put('/:id', movieValidation, asyncWrapper(updateMovie));
 
 /**
  * @openapi
@@ -228,7 +241,7 @@ router.put('/:id', movieValidation, updateMovie);
  *                   example: Internal Server Error
  */
 
-router.delete('/:id', deleteMovie);
+router.delete('/:id', asyncWrapper(deleteMovie));
 
 /**
  * @swagger
@@ -270,6 +283,6 @@ router.delete('/:id', deleteMovie);
  *                   example: Internal Server Error
  */
 
-router.get('/genre/:genreName', getMovieByGenre);
+router.get('/genre/:genreName', asyncWrapper(getMovieByGenre));
 
 export default router;

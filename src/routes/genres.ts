@@ -1,6 +1,7 @@
 import express from 'express';
 import { deleteGenre, getAllGenres, createGenre, updateGenre } from '../controllers/genres.controllers';
 import { genreValidation } from '../middlewares/validator';
+import { asyncWrapper } from '../asyncWrapper';
 
 const router: express.Router = express.Router();
 
@@ -34,7 +35,7 @@ const router: express.Router = express.Router();
  *                   example: Internal Server Error
  */
 
-router.get('/', getAllGenres);
+router.get('/', asyncWrapper(getAllGenres));
 
 /**
  * @openapi
@@ -78,7 +79,7 @@ router.get('/', getAllGenres);
  *                   example: Internal Server Error
  */
 
-router.post('/', genreValidation, createGenre);
+router.post('/', genreValidation, asyncWrapper(createGenre));
 
 /**
  * @openapi
@@ -139,7 +140,7 @@ router.post('/', genreValidation, createGenre);
  *                   example: Internal Server Error
  */
 
-router.put('/:id', genreValidation, updateGenre);
+router.put('/:id', genreValidation, asyncWrapper(updateGenre));
 
 /**
  * @openapi
@@ -184,6 +185,6 @@ router.put('/:id', genreValidation, updateGenre);
  *                   example: Internal Server Error
  */
 
-router.delete('/:id', deleteGenre);
+router.delete('/:id', asyncWrapper(deleteGenre));
 
 export default router;

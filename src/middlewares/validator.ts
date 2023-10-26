@@ -16,7 +16,6 @@ export const movieValidation = (req: Request, res: Response, next: NextFunction)
     { name: 'Title', value: title },
     { name: 'Description', value: description },
     { name: 'ReleaseDate', value: releaseDate },
-    { name: 'Genre', value: genre },
   ];
   for (const field of fields) {
     if (!field.value || typeof field.value !== 'string' || field.value.trim() === '') {
@@ -24,6 +23,10 @@ export const movieValidation = (req: Request, res: Response, next: NextFunction)
       return next(error);
     }
   }
+  if (!Array.isArray(genre) || genre.length === 0) {
+    return next(new HttpError('Genre field is required', 400));
+  }
+
   const validReleaseDate = new Date(releaseDate);
   if (isNaN(validReleaseDate.getTime())) {
     const error = new HttpError('Invalid release date', 422);

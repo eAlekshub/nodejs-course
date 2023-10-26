@@ -23,7 +23,6 @@
   "homepage": "https://github.com/oleksandr-iefymchuk/nodejs-course#readme",
   "dependencies": {
     "express": "^4.18.2",
-    "mongodb": "^6.1.0",
     "mongoose": "^7.6.1",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0"
