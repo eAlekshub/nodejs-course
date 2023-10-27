@@ -1,4 +1,5 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
+import { healthCheck } from '../controllers/healthChecks.controllers';
 
 const router: express.Router = express.Router();
 
@@ -23,9 +24,6 @@ const router: express.Router = express.Router();
  *                   example: "Server is up and running!"
  */
 
-router.get('/', (req: Request, res: Response): void => {
-  const response: { status: string } = { status: 'Server is up and running' };
-  res.status(200).json(response);
-});
+router.get('/', healthCheck);
 
 export default router;
