@@ -24,7 +24,7 @@ export const movieValidation = (req: Request, res: Response, next: NextFunction)
     }
   }
   if (!Array.isArray(genre) || genre.length === 0) {
-    return next(new HttpError('Genre field is required', 400));
+    return next(new HttpError('Genre field is required and should be an array', 400));
   }
 
   const validReleaseDate = new Date(releaseDate);
