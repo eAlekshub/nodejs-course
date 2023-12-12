@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { genreValidation, movieValidation } from '../../src/middlewares/validator';
+import { apiErrors } from '../../src/constants';
 
 const res: Response = {} as Response;
 const next: jest.Mock = jest.fn();
@@ -27,7 +28,7 @@ describe('genreValidation', () => {
 
     expect(next).toHaveBeenCalledWith(
       expect.objectContaining({
-        message: 'Name field is required',
+        message: apiErrors.REQUIRED_NANE,
         code: 400,
       }),
     );
@@ -59,7 +60,7 @@ describe('movieValidation', () => {
     movieValidation(req, res, next);
     expect(next).toHaveBeenCalledWith(
       expect.objectContaining({
-        message: 'Title field is required',
+        message: apiErrors.REQUIRED_TITLE,
         code: 400,
       }),
     );
@@ -79,7 +80,7 @@ describe('movieValidation', () => {
     expect(next).toHaveBeenCalledWith(
       expect.objectContaining({
         code: 422,
-        message: 'Invalid release date',
+        message: apiErrors.INVALID_DATE,
       }),
     );
   });
@@ -98,7 +99,7 @@ describe('movieValidation', () => {
     expect(next).toHaveBeenCalledWith(
       expect.objectContaining({
         code: 400,
-        message: 'Genre field is required and should be an array',
+        message: apiErrors.REQUIRED_GENRE,
       }),
     );
   });

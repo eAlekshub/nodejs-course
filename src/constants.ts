@@ -1,5 +1,7 @@
 type ApiErrors = {
   REQUIRED_NANE: string;
+  REQUIRED_TITLE: string;
+  REQUIRED_GENRE: string;
   REQUIRED_FIELDS: string;
   NOT_FOUND: string;
   INVALID_DATE: string;
@@ -14,8 +16,10 @@ type ApiEndpoints = {
 
 export const apiErrors: ApiErrors = {
   REQUIRED_NANE: 'Name field is required',
+  REQUIRED_TITLE: 'Title field is required',
+  REQUIRED_GENRE: 'Genre field is required and should be an array',
   REQUIRED_FIELDS: 'All fields are required',
-  INVALID_DATE: 'Invalid date format',
+  INVALID_DATE: 'Invalid release date',
   NOT_FOUND: 'Not found',
   SERVER_ERROR: 'Internal Server Error',
 };

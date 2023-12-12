@@ -8,7 +8,7 @@ const request = supertest(app);
 const PORT = 3001;
 app.use('/health-check', healthCheck);
 
-describe('healthCheck Route', () => {
+describe('GET /health-check', () => {
   let server: http.Server;
 
   beforeAll((done) => {

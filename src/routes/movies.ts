@@ -102,7 +102,7 @@ router.get('/', asyncWrapper(getAllMovies));
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Invalid date format
+ *                   example: Invalid release date
  *       500:
  *         description: Internal Server Error
  *         content:
@@ -183,7 +183,7 @@ router.post('/', movieValidation, asyncWrapper(createMovie));
  *               properties:
  *                 error:
  *                   type: string
- *                   example: Invalid date format
+ *                   example: Invalid release date
  *       500:
  *         description: Internal Server Error
  *         content:
